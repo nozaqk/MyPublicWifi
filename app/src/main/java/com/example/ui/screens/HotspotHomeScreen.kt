@@ -43,6 +43,11 @@ fun HotspotHomeScreen(
   val internetConnection by viewModel.internetConnection.collectAsState()
   val ssid by viewModel.ssid.collectAsState()
   val password by viewModel.password.collectAsState()
+  val broadcastSsid by viewModel.broadcastSsid.collectAsState()
+  val broadcastPassword by viewModel.broadcastPassword.collectAsState()
+  // While broadcasting, show the credentials Android actually uses; otherwise the typed values
+  val shownSsid = broadcastSsid ?: ssid
+  val shownPassword = broadcastPassword ?: password
   val isPasswordVisible by viewModel.isPasswordVisible.collectAsState()
   val isHotspotActive by viewModel.isHotspotActive.collectAsState()
   val connectedDevices by viewModel.connectedDevices.collectAsState()
@@ -488,7 +493,7 @@ fun HotspotHomeScreen(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-              text = "1. On other device, search Wi-Fi for: $ssid\n2. Enter password: $password (or scan QR code)",
+              text = "1. On other device, search Wi-Fi for: $shownSsid\n2. Enter password: $shownPassword (or scan QR code)",
               fontSize = 11.sp,
               color = Color(0xFF1E293B),
               lineHeight = 15.sp
@@ -596,7 +601,7 @@ fun HotspotHomeScreen(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-          text = if (isHotspotActive) "$ssid ($localIp)" else ssid,
+          text = if (isHotspotActive) "$shownSsid ($localIp)" else ssid,
           fontSize = 13.sp,
           fontWeight = FontWeight.Medium,
           color = MaterialTheme.colorScheme.onBackground
@@ -618,7 +623,7 @@ fun HotspotHomeScreen(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-          text = if (isPasswordVisible) password else "****************",
+          text = if (isPasswordVisible) shownPassword else "****************",
           fontSize = 13.sp,
           color = MaterialTheme.colorScheme.onBackground,
           modifier = Modifier.weight(1f)

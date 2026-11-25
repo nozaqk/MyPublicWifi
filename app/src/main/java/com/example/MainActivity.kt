@@ -52,6 +52,8 @@ fun MainAppContent(viewModel: HotspotViewModel) {
   val showHotspotHelpDialog by viewModel.showHotspotHelpDialog.collectAsState()
   val ssid by viewModel.ssid.collectAsState()
   val password by viewModel.password.collectAsState()
+  val broadcastSsid by viewModel.broadcastSsid.collectAsState()
+  val broadcastPassword by viewModel.broadcastPassword.collectAsState()
 
   val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
     androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
@@ -151,8 +153,8 @@ fun MainAppContent(viewModel: HotspotViewModel) {
     // QR Code Dialog (Screenshot 6)
     if (showQrDialog) {
       QrCodeDialog(
-        ssid = ssid,
-        password = password,
+        ssid = broadcastSsid ?: ssid,
+        password = broadcastPassword ?: password,
         onDismiss = { viewModel.setShowQrDialog(false) }
       )
     }

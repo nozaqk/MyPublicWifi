@@ -1,69 +1,53 @@
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 Calculating task graph as no cached configuration is available for tasks: :app:assembleRelease
-> Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:preBuild UP-TO-DATE
+> Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:preReleaseBuild UP-TO-DATE
 > Task :app:processReleaseGoogleServices FROM-CACHE
-> Task :app:extractProguardFiles
-> Task :app:generateReleaseBuildConfig
 > Task :app:generateReleaseResources FROM-CACHE
+> Task :app:generateReleaseBuildConfig
 > Task :app:packageReleaseResources
 > Task :app:mergeReleaseJniLibFolders
-> Task :app:checkReleaseDuplicateClasses
-> Task :app:javaPreCompileRelease FROM-CACHE
 > Task :app:processReleaseNavigationResources FROM-CACHE
 > Task :app:parseReleaseLocalResources FROM-CACHE
 > Task :app:generateReleaseRFile FROM-CACHE
-> Task :app:checkReleaseAarMetadata
+> Task :app:javaPreCompileRelease FROM-CACHE
 > Task :app:mergeReleaseNativeLibs
+> Task :app:checkReleaseDuplicateClasses
 > Task :app:mapReleaseSourceSetPaths
 > Task :app:compileReleaseNavigationResources FROM-CACHE
-> Task :app:createReleaseCompatibleScreenManifests
-> Task :app:extractDeepLinksRelease FROM-CACHE
 
 > Task :app:stripReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so. Run with --info option to learn more.
 
 > Task :app:extractReleaseNativeSymbolTables
+> Task :app:checkReleaseAarMetadata
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:extractDeepLinksRelease FROM-CACHE
+> Task :app:createReleaseCompatibleScreenManifests
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
+> Task :app:kspReleaseKotlin
+> Task :app:mergeReleaseResources
 > Task :app:processReleaseMainManifest
+> Task :app:mergeExtDexRelease
 > Task :app:processReleaseManifest
 > Task :app:processReleaseManifestForPackage
-> Task :app:mergeReleaseResources
-> Task :app:kspReleaseKotlin
-> Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseArtProfile
-> Task :app:processReleaseResources
 > Task :app:mergeReleaseAssets
 > Task :app:compressReleaseAssets
 > Task :app:extractReleaseVersionControlInfo
+> Task :app:extractProguardFiles
 > Task :app:validateSigningRelease
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
+> Task :app:processReleaseResources
 > Task :app:optimizeReleaseResources
-Exception in thread "AWT-EventQueue-0" java.lang.NullPointerException: Cannot invoke "ksp.com.intellij.openapi.application.Application.getService(java.lang.Class)" because the return value of "ksp.com.intellij.openapi.application.ApplicationManager.getApplication()" is null
-	at ksp.com.intellij.openapi.fileEditor.FileDocumentManager.getInstance(FileDocumentManager.java:35)
-	at ksp.com.intellij.openapi.fileTypes.BinaryFileTypeDecompilers.lambda$notifyDecompilerSetChange$1(BinaryFileTypeDecompilers.java:29)
-	at java.desktop/java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:318)
-	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:773)
-	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:720)
-	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:714)
-	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
-	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
-	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:742)
-	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:203)
-	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:124)
-	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:113)
-	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:109)
-	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
-	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
 > Task :app:compileReleaseKotlin
 > Task :app:processReleaseJavaRes
-> Task :app:mergeReleaseJavaResource
 > Task :app:compileReleaseJavaWithJavac
+> Task :app:mergeReleaseJavaResource
 > Task :app:dexBuilderRelease
 > Task :app:mergeReleaseGlobalSynthetics
 > Task :app:generateReleaseLintVitalReportModel
@@ -75,9 +59,9 @@ Exception in thread "AWT-EventQueue-0" java.lang.NullPointerException: Cannot in
 > Task :app:packageRelease
 > Task :app:assembleRelease
 > Task :app:createReleaseApkListingFileRedirect
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1795629622429.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1795631384031.json
 
-BUILD SUCCESSFUL in 1m 42s
+BUILD SUCCESSFUL in 2m 29s
 50 actionable tasks: 42 executed, 8 from cache
 Configuration cache entry stored.
 tests=success build=success
