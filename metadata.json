@@ -1,0 +1,6 @@
+{
+  "name": "MyPublicWiFi",
+  "description": "Portable Wi-Fi Hotspot, repeater, client management, bandwidth manager, and network monitor for Android.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
