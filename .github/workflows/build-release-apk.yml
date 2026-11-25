@@ -1,6 +1,9 @@
 name: Build release APK
 
 on:
+  push:
+    branches:
+      - arena/05148e4a-mypublicwifi
   workflow_dispatch:
 
 permissions:
