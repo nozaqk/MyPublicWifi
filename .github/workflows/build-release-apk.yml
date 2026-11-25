@@ -48,32 +48,66 @@ jobs:
           echo "STORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
           echo "KEY_PASSWORD=$PASS" >> "$GITHUB_ENV"
 
-      - name: Run unit tests and build release APK
-        id: build
+      - name: Unit tests
+        id: tests
         run: |
           set -o pipefail
-          mkdir -p release
-          gradle --no-daemon --continue :app:testDebugUnitTest :app:assembleRelease 2>&1 | tee "$RUNNER_TEMP/build.log"
+          gradle --no-daemon --continue :app:testDebugUnitTest 2>&1 | tee "$RUNNER_TEMP/test.log"
+
+      - name: Report failing unit tests as annotations
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, os, xml.etree.ElementTree as ET
+          files = glob.glob("app/build/test-results/testDebugUnitTest/*.xml")
+          total = failed = 0
+          for f in files:
+              root = ET.parse(f).getroot()
+              for tc in root.iter("testcase"):
+                  total += 1
+                  for kind in ("failure", "error"):
+                      node = tc.find(kind)
+                      if node is not None:
+                          failed += 1
+                          msg = (node.get("message") or "").replace("\n", " ")[:400]
+                          name = f"{tc.get('classname')}.{tc.get('name')}"
+                          print(f"::error title=Unit test failed: {name}::{msg}")
+                          body = (node.text or "").splitlines()[:12]
+                          for line in body:
+                              print(f"::error title=Unit test trace ({name})::{line[:300]}")
+          print(f"::notice title=Unit test summary::{total} tests, {failed} failed, {len(files)} result files")
+          PY
+
+      - name: Build release APK
+        id: build
+        if: always()
+        run: |
+          set -o pipefail
+          gradle --no-daemon :app:assembleRelease 2>&1 | tee "$RUNNER_TEMP/build.log"
 
       - name: Publish the single latest APK to the branch
         if: always()
+        env:
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
         run: |
-          set -uo pipefail
           mkdir -p release
-          tail -n 1500 "$RUNNER_TEMP/build.log" > release/BUILD_LOG.txt 2>/dev/null || echo "no log" > release/BUILD_LOG.txt
-          APK=$(find app/build/outputs/apk/release -maxdepth 1 -name "*-release.apk" | head -n 1)
-          if [ "${{ steps.build.outcome }}" = "success" ] && [ -n "$APK" ]; then
+          cat "$RUNNER_TEMP/build.log" 2>/dev/null | tail -n 1500 > release/BUILD_LOG.txt || echo "no build log" > release/BUILD_LOG.txt
+          echo "tests=$TESTS_OUTCOME build=$BUILD_OUTCOME" >> release/BUILD_LOG.txt
+          APK=$(find app/build/outputs/apk/release -maxdepth 1 -name "*-release.apk" 2>/dev/null | head -n 1)
+          if [ "$TESTS_OUTCOME" = "success" ] && [ "$BUILD_OUTCOME" = "success" ] && [ -n "$APK" ]; then
             cp "$APK" release/MyPublicWiFi-latest-release.apk
-            echo "APK published: $APK"
+            echo "::notice title=APK published::$APK"
           else
-            echo "Build failed; keeping the previous APK in release/ if present."
+            echo "::warning title=APK not updated::tests=$TESTS_OUTCOME build=$BUILD_OUTCOME; previous APK kept"
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A release
           if git diff --cached --quiet; then
-            echo "Nothing new to publish."
-          else
-            git commit -m "build: latest release APK (run ${GITHUB_RUN_NUMBER}) [skip ci]"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "::notice::Nothing new to publish"
+            exit 0
           fi
+          git commit -m "build: latest release APK (run ${GITHUB_RUN_NUMBER}) [skip ci]" || { echo "::error title=commit failed::see step output"; exit 1; }
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}" || { echo "::error title=push failed::git push rejected"; exit 1; }
+          echo "::notice title=pushed::$(git rev-parse --short HEAD)"
