@@ -16,6 +16,8 @@ import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.ServerSocket
+import java.net.URLDecoder
+import java.net.URLEncoder
 import java.net.Socket
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -102,9 +104,9 @@ class LocalHotspotWebServer(
         if (line.isNullOrBlank()) break
         val lower = line?.lowercase(Locale.ROOT) ?: ""
         if (lower.startsWith("host:")) {
-          hostHeader = line!!.substringAfter(":").trim()
+          hostHeader = line?.substringAfter(":")?.trim() ?: hostHeader
         } else if (lower.startsWith("content-length:")) {
-          contentLength = line!!.substringAfter(":").trim().toIntOrNull() ?: 0
+          contentLength = line?.substringAfter(":")?.trim()?.toIntOrNull() ?: 0
         }
       }
 
@@ -152,8 +154,8 @@ class LocalHotspotWebServer(
   }
 
   private fun handleCaptivePortal(out: OutputStream) {
-    val title = captivePortalSettings.portalTitle.ifBlank { "MyPublicWiFi Hotspot" }
-    val welcome = captivePortalSettings.welcomeMessage.ifBlank { "Welcome to the wireless hotspot network." }
+    val title = escapeHtml(captivePortalSettings.portalTitle.ifBlank { "MyPublicWiFi Hotspot" })
+    val welcome = escapeHtml(captivePortalSettings.welcomeMessage.ifBlank { "Welcome to the wireless hotspot network." })
     val requireTerms = captivePortalSettings.requireTerms
 
     val html = """
@@ -241,13 +243,21 @@ class LocalHotspotWebServer(
     }
 
     if (path.startsWith("/files/download/")) {
-      val filename = path.removePrefix("/files/download/")
+      val filename = try {
+        URLDecoder.decode(path.removePrefix("/files/download/"), "UTF-8")
+      } catch (_: Exception) {
+        ""
+      }
+      // Only serve regular files that live directly inside the shared folder (blocks ../ traversal)
       val targetFile = File(sharedDir, filename)
-      if (targetFile.exists() && targetFile.isFile) {
+      val isInsideSharedDir = filename.isNotBlank() &&
+          targetFile.canonicalFile.parentFile == sharedDir.canonicalFile
+      if (isInsideSharedDir && targetFile.exists() && targetFile.isFile) {
         val bytes = targetFile.readBytes()
+        val safeName = targetFile.name.replace("\"", "")
         val header = "HTTP/1.1 200 OK\r\n" +
             "Content-Type: application/octet-stream\r\n" +
-            "Content-Disposition: attachment; filename=\"${targetFile.name}\"\r\n" +
+            "Content-Disposition: attachment; filename=\"$safeName\"\r\n" +
             "Content-Length: ${bytes.size}\r\n" +
             "Connection: close\r\n\r\n"
         out.write(header.toByteArray(Charsets.UTF_8))
@@ -263,10 +273,10 @@ class LocalHotspotWebServer(
       val sizeKb = file.length() / 1024
       """
       <tr>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0;">📄 ${file.name}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0;">📄 ${escapeHtml(file.name)}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0; color: #64748B;">${sizeKb} KB</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0; text-align: right;">
-          <a href="/files/download/${file.name}" style="color: #0096E6; font-weight: bold; text-decoration: none;">Download</a>
+          <a href="/files/download/${URLEncoder.encode(file.name, "UTF-8").replace("+", "%20")}" style="color: #0096E6; font-weight: bold; text-decoration: none;">Download</a>
         </td>
       </tr>
       """.trimIndent()
@@ -291,7 +301,7 @@ class LocalHotspotWebServer(
       </head>
       <body>
         <div class="container">
-          <div class="header">📁 ${fileSharingSettings.shareName.ifBlank { "Local Hotspot File Server" }}</div>
+          <div class="header">📁 ${escapeHtml(fileSharingSettings.shareName.ifBlank { "Local Hotspot File Server" })}</div>
           <div class="sub">Download shared documents directly over local Wi-Fi without internet.</div>
           <table>
             <thead>
@@ -323,6 +333,15 @@ class LocalHotspotWebServer(
       </html>
     """.trimIndent()
     sendHtmlResponse(out, 200, "OK", html)
+  }
+
+  private fun escapeHtml(text: String): String {
+    return text
+      .replace("&", "&amp;")
+      .replace("<", "&lt;")
+      .replace(">", "&gt;")
+      .replace("\"", "&quot;")
+      .replace("'", "&#39;")
   }
 
   private fun sendHtmlResponse(out: OutputStream, code: Int, status: String, html: String) {

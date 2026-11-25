@@ -312,8 +312,7 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
     _uptimeSeconds.value = 0L
     _activeIpDetails.value = "${_ssid.value} ($localIpAddress)"
 
-    // Query real connected hardware devices from ARP table - strictly NO fake mock devices
-    _connectedDevices.value = ConnectedDeviceScanner.scanConnectedDevices(getApplication())
+    // Real connected hardware devices are scanned (off the main thread) by the monitoring job below
 
     // Start real hardware TrafficStats sampling
     trafficMonitor.startSession()
@@ -390,6 +389,13 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
   private fun startRealTrafficMonitoring() {
     activeHotspotJob?.cancel()
     activeHotspotJob = viewModelScope.launch {
+      // Initial ARP scan: file IO and reverse-DNS lookups run off the main thread.
+      // Cancelled together with the job when the hotspot stops.
+      val initialDevices = withContext(Dispatchers.IO) {
+        ConnectedDeviceScanner.scanConnectedDevices(getApplication())
+      }
+      _connectedDevices.value = initialDevices
+
       while (isActive && _isHotspotActive.value) {
         delay(1000)
         _uptimeSeconds.value += 1
@@ -444,16 +450,14 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
 
   // Device Management
   fun toggleBlockDevice(deviceId: String) {
+    val device = _connectedDevices.value.find { it.id == deviceId } ?: return
+    val newBlocked = !device.isBlocked
     _connectedDevices.update { list ->
-      list.map { dev ->
-        if (dev.id == deviceId) {
-          val newBlocked = !dev.isBlocked
-          val statusText = if (newBlocked) "Blocked" else "Unblocked"
-          Toast.makeText(getApplication(), "${dev.name} is now $statusText", Toast.LENGTH_SHORT).show()
-          dev.copy(isBlocked = newBlocked)
-        } else dev
-      }
+      list.map { dev -> if (dev.id == deviceId) dev.copy(isBlocked = newBlocked) else dev }
     }
+    // Side effects (Toast) stay outside the StateFlow.update lambda, which may be retried
+    val statusText = if (newBlocked) "Blocked" else "Unblocked"
+    Toast.makeText(getApplication(), "${device.name} is now $statusText", Toast.LENGTH_SHORT).show()
   }
 
   fun removeDevice(deviceId: String) {

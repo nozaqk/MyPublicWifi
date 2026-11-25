@@ -128,7 +128,7 @@ fun EmojiPickerModal(
           )
         }
 
-        Divider(
+        HorizontalDivider(
           color = Color(0xFFE2E8F0),
           thickness = 1.dp,
           modifier = Modifier.padding(vertical = 8.dp)

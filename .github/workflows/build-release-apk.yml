@@ -48,19 +48,19 @@ jobs:
           echo "STORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
           echo "KEY_PASSWORD=$PASS" >> "$GITHUB_ENV"
 
-      - name: Build release APK
+      - name: Run unit tests and build release APK
         id: build
         run: |
           set -o pipefail
           mkdir -p release
-          gradle --no-daemon :app:assembleRelease 2>&1 | tee "$RUNNER_TEMP/build.log"
+          gradle --no-daemon --continue :app:testDebugUnitTest :app:assembleRelease 2>&1 | tee "$RUNNER_TEMP/build.log"
 
       - name: Publish the single latest APK to the branch
         if: always()
         run: |
           set -uo pipefail
           mkdir -p release
-          tail -n 400 "$RUNNER_TEMP/build.log" > release/BUILD_LOG.txt 2>/dev/null || echo "no log" > release/BUILD_LOG.txt
+          tail -n 1500 "$RUNNER_TEMP/build.log" > release/BUILD_LOG.txt 2>/dev/null || echo "no log" > release/BUILD_LOG.txt
           APK=$(find app/build/outputs/apk/release -maxdepth 1 -name "*-release.apk" | head -n 1)
           if [ "${{ steps.build.outcome }}" = "success" ] && [ -n "$APK" ]; then
             cp "$APK" release/MyPublicWiFi-latest-release.apk

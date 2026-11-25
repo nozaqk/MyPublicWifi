@@ -67,7 +67,7 @@ fun BandwidthManagerScreen(
         color = MaterialTheme.colorScheme.onBackground
       )
 
-      Divider(
+      HorizontalDivider(
         color = Color(0xFFE2E8F0),
         thickness = 1.dp,
         modifier = Modifier.padding(vertical = 10.dp)
@@ -135,7 +135,7 @@ fun BandwidthManagerScreen(
         }
       }
 
-      Divider(color = BrandBlue, thickness = 2.dp)
+      HorizontalDivider(color = BrandBlue, thickness = 2.dp)
 
       Spacer(modifier = Modifier.height(14.dp))
 
@@ -518,7 +518,7 @@ fun BandwidthManagerScreen(
                     }
                     Text(text = "Limit: 3 Mbit/s", fontSize = 12.sp, color = BrandBlue)
                   }
-                  Divider(color = Color(0xFFE2E8F0))
+                  HorizontalDivider(color = Color(0xFFE2E8F0))
                 }
               }
             }

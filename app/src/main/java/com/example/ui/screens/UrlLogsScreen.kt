@@ -167,7 +167,7 @@ fun UrlLogsScreen(
       }
     }
 
-    Divider(color = BrandBlue, thickness = 2.dp)
+    HorizontalDivider(color = BrandBlue, thickness = 2.dp)
 
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -279,7 +279,7 @@ fun UrlLogsScreen(
           )
         }
 
-        Divider(color = Color(0xFFCBD5E1), thickness = 1.dp)
+        HorizontalDivider(color = Color(0xFFCBD5E1), thickness = 1.dp)
 
         // Table Rows
         if (filteredLogs.isEmpty()) {
@@ -365,7 +365,7 @@ fun UrlLogsScreen(
                 )
               }
 
-              Divider(color = Color(0xFFE2E8F0), thickness = 0.5.dp)
+              HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 0.5.dp)
             }
           }
         }
