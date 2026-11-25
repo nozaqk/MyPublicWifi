@@ -79,6 +79,15 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
   // Hardware Manager for real over-the-air Wi-Fi broadcast
   val hardwareManager = HotspotHardwareManager(application)
 
+  // Credentials Android actually broadcasts. A normal app cannot choose these: Android's
+  // local-only hotspot generates its own SSID and passphrase, so they can differ from the
+  // SSID/password typed in the app. Sharing and QR codes must use these when live.
+  private val _broadcastSsid = MutableStateFlow<String?>(null)
+  val broadcastSsid: StateFlow<String?> = _broadcastSsid.asStateFlow()
+
+  private val _broadcastPassword = MutableStateFlow<String?>(null)
+  val broadcastPassword: StateFlow<String?> = _broadcastPassword.asStateFlow()
+
   private val _isHardwareBroadcasting = MutableStateFlow(false)
   val isHardwareBroadcasting: StateFlow<Boolean> = _isHardwareBroadcasting.asStateFlow()
 
@@ -328,13 +337,15 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
     hardwareManager.startHardwareHotspot(useWifiDirect = isWifiDirect) { result ->
       when (result) {
         is HotspotStartResult.Success -> {
+          _broadcastSsid.value = result.ssid
+          _broadcastPassword.value = result.password
           _isHardwareBroadcasting.value = true
-          _hardwareStatusMessage.value = "Broadcasting Wi-Fi as \"${_ssid.value}\". Look for this network on other devices or scan the QR Code."
+          _hardwareStatusMessage.value = "Broadcasting Wi-Fi as \"${result.ssid}\". Look for this network on other devices or scan the QR Code."
           _hardwareErrorMessage.value = null
 
           Toast.makeText(
             getApplication(),
-            "Broadcasting Wi-Fi as: ${_ssid.value}",
+            "Broadcasting Wi-Fi as: ${result.ssid}",
             Toast.LENGTH_LONG
           ).show()
         }
@@ -344,11 +355,15 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
         }
 
         is HotspotStartResult.WifiDisabled -> {
+          _broadcastSsid.value = null
+          _broadcastPassword.value = null
           _hardwareErrorMessage.value = "Wi-Fi antenna is currently turned off. Please turn on Wi-Fi in your device settings."
           _showHotspotHelpDialog.value = true
         }
 
         is HotspotStartResult.Failed -> {
+          _broadcastSsid.value = null
+          _broadcastPassword.value = null
           _isHardwareBroadcasting.value = false
           _hardwareErrorMessage.value = result.message
           _hardwareStatusMessage.value = "To broadcast over the air to other phones, turn on Mobile Hotspot in Android Settings."
@@ -361,6 +376,8 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
   fun stopHotspot() {
     _isHotspotActive.value = false
     _isHardwareBroadcasting.value = false
+    _broadcastSsid.value = null
+    _broadcastPassword.value = null
     _hardwareStatusMessage.value = null
     hardwareManager.stopHardwareHotspot()
     localWebServer.stop()
@@ -616,7 +633,7 @@ class HotspotViewModel(application: Application) : AndroidViewModel(application)
       action = Intent.ACTION_SEND
       putExtra(
         Intent.EXTRA_TEXT,
-        "Wi-Fi Network: ${_ssid.value}\nPassword: ${_password.value}\nConnect with MyPublicWiFi"
+        "Wi-Fi Network: ${broadcastSsid.value ?: _ssid.value}\nPassword: ${broadcastPassword.value ?: _password.value}\nConnect with MyPublicWiFi"
       )
       type = "text/plain"
     }

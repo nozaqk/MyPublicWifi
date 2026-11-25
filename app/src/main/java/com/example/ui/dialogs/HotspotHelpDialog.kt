@@ -29,8 +29,8 @@ fun HotspotHelpDialog(
   onDismiss: () -> Unit
 ) {
   val context = LocalContext.current
-  val ssid = viewModel.ssid.value
-  val password = viewModel.password.value
+  val ssid = viewModel.broadcastSsid.value ?: viewModel.ssid.value
+  val password = viewModel.broadcastPassword.value ?: viewModel.password.value
   val isHardwareBroadcasting = viewModel.isHardwareBroadcasting.value
   val errorMessage = viewModel.hardwareErrorMessage.value
 
