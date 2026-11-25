@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -563,7 +564,7 @@ fun HotspotHomeScreen(
           contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
         ) {
           Icon(
-            imageVector = Icons.Default.HelpOutline,
+            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
             contentDescription = null,
             modifier = Modifier.size(15.dp)
           )
@@ -579,7 +580,7 @@ fun HotspotHomeScreen(
         .fillMaxWidth()
         .padding(top = 16.dp)
     ) {
-      Divider(color = Color(0xFFE2E8F0), thickness = 1.dp)
+      HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
       Spacer(modifier = Modifier.height(8.dp))
 
       // SSID / IP line

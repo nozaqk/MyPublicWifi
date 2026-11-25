@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-release-apk-${{ github.ref }}
@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   build:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -25,22 +26,21 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Install Android platform 36.1
-        run: yes | sdkmanager --licenses > /dev/null || true; sdkmanager "platforms;android-36.1" "platforms;android-36" "build-tools;36.0.0"
+      - name: Install Android SDK platforms and build tools
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses > /dev/null
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-36" "platforms;android-36.1" "build-tools;36.0.0" "platform-tools"
 
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.3.1"
 
-      - name: Create signing keystore (build-time)
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      - name: Create build-time signing keystore
         run: |
           set -euo pipefail
-          PASS="${KEYSTORE_PASSWORD:-$(openssl rand -hex 16)}"
-          keytool -genkeypair -v -keystore "$RUNNER_TEMP/upload.jks" -storetype JKS \
+          PASS="$(openssl rand -hex 16)"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/upload.jks" -storetype JKS \
             -alias upload -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass "$PASS" -keypass "$PASS" \
             -dname "CN=MyPublicWiFi, OU=Mobile, O=MyPublicWiFi, L=Accra, ST=Greater Accra, C=GH"
@@ -48,21 +48,66 @@ jobs:
           echo "STORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
           echo "KEY_PASSWORD=$PASS" >> "$GITHUB_ENV"
 
-      - name: Build release APK
-        run: gradle --no-daemon :app:assembleRelease
-
-      - name: Locate and rename APK
+      - name: Unit tests
+        id: tests
         run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/out"
-          APK=$(find app/build/outputs/apk/release -name "*.apk" -not -name "*unsigned*" | head -n 1)
-          test -n "$APK"
-          cp "$APK" "$RUNNER_TEMP/out/MyPublicWiFi-release.apk"
-          ls -la "$RUNNER_TEMP/out"
+          set -o pipefail
+          gradle --no-daemon --continue :app:testDebugUnitTest 2>&1 | tee "$RUNNER_TEMP/test.log"
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: MyPublicWiFi-release-apk
-          path: ${{ runner.temp }}/out/MyPublicWiFi-release.apk
-          if-no-files-found: error
-          retention-days: 7
+      - name: Report failing unit tests as annotations
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, os, xml.etree.ElementTree as ET
+          files = glob.glob("app/build/test-results/testDebugUnitTest/*.xml")
+          total = failed = 0
+          for f in files:
+              root = ET.parse(f).getroot()
+              for tc in root.iter("testcase"):
+                  total += 1
+                  for kind in ("failure", "error"):
+                      node = tc.find(kind)
+                      if node is not None:
+                          failed += 1
+                          msg = (node.get("message") or "").replace("\n", " ")[:400]
+                          name = f"{tc.get('classname')}.{tc.get('name')}"
+                          print(f"::error title=Unit test failed: {name}::{msg}")
+                          body = (node.text or "").splitlines()[:12]
+                          for line in body:
+                              print(f"::error title=Unit test trace ({name})::{line[:300]}")
+          print(f"::notice title=Unit test summary::{total} tests, {failed} failed, {len(files)} result files")
+          PY
+
+      - name: Build release APK
+        id: build
+        if: always()
+        run: |
+          set -o pipefail
+          gradle --no-daemon :app:assembleRelease 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Publish the single latest APK to the branch
+        if: always()
+        env:
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          mkdir -p release
+          cat "$RUNNER_TEMP/build.log" 2>/dev/null | tail -n 1500 > release/BUILD_LOG.txt || echo "no build log" > release/BUILD_LOG.txt
+          echo "tests=$TESTS_OUTCOME build=$BUILD_OUTCOME" >> release/BUILD_LOG.txt
+          APK=$(find app/build/outputs/apk/release -maxdepth 1 -name "*-release.apk" 2>/dev/null | head -n 1)
+          if [ "$TESTS_OUTCOME" = "success" ] && [ "$BUILD_OUTCOME" = "success" ] && [ -n "$APK" ]; then
+            cp "$APK" release/MyPublicWiFi-latest-release.apk
+            echo "::notice title=APK published::$APK"
+          else
+            echo "::warning title=APK not updated::tests=$TESTS_OUTCOME build=$BUILD_OUTCOME; previous APK kept"
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A release
+          if git diff --cached --quiet; then
+            echo "::notice::Nothing new to publish"
+            exit 0
+          fi
+          git commit -m "build: latest release APK (run ${GITHUB_RUN_NUMBER}) [skip ci]" || { echo "::error title=commit failed::see step output"; exit 1; }
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}" || { echo "::error title=push failed::git push rejected"; exit 1; }
+          echo "::notice title=pushed::$(git rev-parse --short HEAD)"

@@ -64,7 +64,7 @@ fun DhcpSettingsScreen(viewModel: HotspotViewModel, modifier: Modifier = Modifie
   ) {
     Column {
       Text("DHCP Server", fontSize = 17.sp, fontWeight = FontWeight.Bold)
-      Divider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+      HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
 
       Text("Configure local IP assignment pool for connected hotspot clients.", fontSize = 12.sp, color = Color(0xFF64748B))
       Spacer(modifier = Modifier.height(14.dp))
@@ -136,7 +136,7 @@ fun PortForwardingScreen(viewModel: HotspotViewModel, modifier: Modifier = Modif
       }
     }
 
-    Divider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+    HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
 
     Text("Forward inbound traffic ports to specific client devices.", fontSize = 12.sp, color = Color(0xFF64748B))
     Spacer(modifier = Modifier.height(10.dp))
@@ -236,7 +236,7 @@ fun DeviceFilterScreen(viewModel: HotspotViewModel, modifier: Modifier = Modifie
       }
     }
 
-    Divider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+    HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
 
     Text("Filter clients by MAC hardware address (Whitelist / Blacklist mode).", fontSize = 12.sp, color = Color(0xFF64748B))
     Spacer(modifier = Modifier.height(10.dp))
@@ -316,7 +316,7 @@ fun FirewallSettingsScreen(viewModel: HotspotViewModel, modifier: Modifier = Mod
   ) {
     Column {
       Text("Firewall", fontSize = 17.sp, fontWeight = FontWeight.Bold)
-      Divider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+      HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
 
       Text("Hardware packet filter & port security controls.", fontSize = 12.sp, color = Color(0xFF64748B))
       Spacer(modifier = Modifier.height(14.dp))
@@ -392,7 +392,7 @@ fun CaptivePortalSettingsScreen(viewModel: HotspotViewModel, modifier: Modifier 
   ) {
     Column {
       Text("Authentication / Design", fontSize = 17.sp, fontWeight = FontWeight.Bold)
-      Divider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+      HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
 
       Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -471,7 +471,7 @@ fun FileSharingSettingsScreen(viewModel: HotspotViewModel, modifier: Modifier = 
   ) {
     Column {
       Text("File Sharing", fontSize = 17.sp, fontWeight = FontWeight.Bold)
-      Divider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
+      HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp, modifier = Modifier.padding(vertical = 10.dp))
 
       Row(
         verticalAlignment = Alignment.CenterVertically,

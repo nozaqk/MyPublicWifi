@@ -80,6 +80,7 @@ class HotspotHardwareManager(private val context: Context) {
     try {
       wifiManager.startLocalOnlyHotspot(
         object : WifiManager.LocalOnlyHotspotCallback() {
+          @Suppress("DEPRECATION")
           override fun onStarted(activeReservation: WifiManager.LocalOnlyHotspotReservation) {
             super.onStarted(activeReservation)
             reservation = activeReservation
@@ -89,17 +90,8 @@ class HotspotHardwareManager(private val context: Context) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
               val softAp = activeReservation.softApConfiguration
-              if (softAp != null) {
-                broadcastSsid = softAp.ssid ?: broadcastSsid
-                broadcastPassword = softAp.passphrase ?: ""
-              } else {
-                @Suppress("DEPRECATION")
-                val wifiConfig = activeReservation.wifiConfiguration
-                if (wifiConfig != null) {
-                  broadcastSsid = wifiConfig.SSID ?: broadcastSsid
-                  broadcastPassword = wifiConfig.preSharedKey ?: ""
-                }
-              }
+              broadcastSsid = softAp.ssid ?: broadcastSsid
+              broadcastPassword = softAp.passphrase ?: ""
             } else {
               @Suppress("DEPRECATION")
               val wifiConfig = activeReservation.wifiConfiguration
